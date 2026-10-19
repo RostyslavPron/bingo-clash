@@ -5,18 +5,22 @@ import {
   createGameSession,
   joinGameSession,
 } from './services/sessionService'
-import { getPlayers } from './services/lobbyService'
+import {
+  getPlayers,
+  updateReadyStatus,
+} from './services/lobbyService'
 
 type Player = {
   id: string
+  player_id: string
   display_name: string
   is_host: boolean
+  is_ready: boolean
 }
 
 function App() {
   const [userId, setUserId] = useState('')
   const [gameName, setGameName] = useState('')
-
   const [hostName, setHostName] = useState('')
   const [displayName, setDisplayName] =
     useState('')
@@ -107,6 +111,20 @@ function App() {
     setSessionId(session.id)
   }
 
+  const currentPlayer = players.find(
+    (p) => p.player_id === userId
+  )
+
+  const toggleReady = async () => {
+    if (!currentPlayer) return
+
+    await updateReadyStatus(
+      userId,
+      sessionId,
+      !currentPlayer.is_ready
+    )
+  }
+
   return (
     <div
       style={{
@@ -193,11 +211,18 @@ function App() {
             {inviteCode}
           </p>
 
+          <button onClick={toggleReady}>
+            {currentPlayer?.is_ready
+              ? 'Not Ready'
+              : 'Ready'}
+          </button>
+
           <h3>Players</h3>
 
           <ul>
             {players.map((player) => (
               <li key={player.id}>
+                {player.is_ready ? '✅' : '⏳'}{' '}
                 {player.display_name}
                 {player.is_host
                   ? ' (Host)'

@@ -13,3 +13,21 @@ export async function getPlayers(sessionId: string) {
 
   return data
 }
+
+export async function updateReadyStatus(
+  playerId: string,
+  sessionId: string,
+  isReady: boolean
+) {
+  const { error } = await supabase
+    .from('session_players')
+    .update({
+      is_ready: isReady,
+    })
+    .eq('player_id', playerId)
+    .eq('session_id', sessionId)
+
+  if (error) {
+    throw error
+  }
+}
