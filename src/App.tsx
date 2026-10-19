@@ -10,6 +10,9 @@ import {
   updateReadyStatus,
 } from './services/lobbyService'
 
+import HomePage from './pages/HomePage'
+import LobbyPage from './pages/LobbyPage'
+
 type Player = {
   id: string
   player_id: string
@@ -134,107 +137,26 @@ function App() {
     >
       <h1>Bingo Clash</h1>
 
-      {!sessionId && (
-        <>
-          <h2>Create Game</h2>
-
-          <input
-            type="text"
-            placeholder="Your Display Name"
-            value={hostName}
-            onChange={(e) =>
-              setHostName(e.target.value)
-            }
-          />
-
-          <br />
-          <br />
-
-          <input
-            type="text"
-            placeholder="Game Name"
-            value={gameName}
-            onChange={(e) =>
-              setGameName(e.target.value)
-            }
-          />
-
-          <br />
-          <br />
-
-          <button onClick={handleCreateGame}>
-            Create Game
-          </button>
-
-          <hr />
-
-          <h2>Join Game</h2>
-
-          <input
-            type="text"
-            placeholder="Display Name"
-            value={displayName}
-            onChange={(e) =>
-              setDisplayName(e.target.value)
-            }
-          />
-
-          <br />
-          <br />
-
-          <input
-            type="text"
-            placeholder="Invite Code"
-            value={inviteCodeInput}
-            onChange={(e) =>
-              setInviteCodeInput(
-                e.target.value
-              )
-            }
-          />
-
-          <br />
-          <br />
-
-          <button onClick={handleJoinGame}>
-            Join Game
-          </button>
-        </>
-      )}
-
-      {sessionId && (
-        <>
-          <h2>Lobby</h2>
-
-          <p>
-            <strong>Invite Code:</strong>{' '}
-            {inviteCode}
-          </p>
-
-          <button onClick={toggleReady}>
-            {currentPlayer?.is_ready
-              ? 'Not Ready'
-              : 'Ready'}
-          </button>
-
-          <h3>Players</h3>
-
-          <ul>
-            {players.map((player) => (
-              <li key={player.id}>
-                {player.is_ready ? '✅' : '⏳'}{' '}
-                {player.display_name}
-                {player.is_host
-                  ? ' (Host)'
-                  : ''}
-              </li>
-            ))}
-          </ul>
-
-          <p>
-            Waiting for host to start...
-          </p>
-        </>
+      {!sessionId ? (
+        <HomePage
+          hostName={hostName}
+          gameName={gameName}
+          displayName={displayName}
+          inviteCodeInput={inviteCodeInput}
+          setHostName={setHostName}
+          setGameName={setGameName}
+          setDisplayName={setDisplayName}
+          setInviteCodeInput={setInviteCodeInput}
+          onCreateGame={handleCreateGame}
+          onJoinGame={handleJoinGame}
+        />
+      ) : (
+        <LobbyPage
+          inviteCode={inviteCode}
+          players={players}
+          isReady={currentPlayer?.is_ready ?? false}
+          onToggleReady={toggleReady}
+        />
       )}
     </div>
   )

@@ -25,23 +25,18 @@ export default function LobbyPage({
       <h2>Lobby</h2>
 
       <p>
-        <strong>Invite Code:</strong>{' '}
-        {inviteCode}
+        <strong>Invite Code:</strong> {inviteCode}
       </p>
 
       <button onClick={onToggleReady}>
-        {isReady
-          ? 'Not Ready'
-          : 'Ready'}
+        {isReady ? 'Not Ready' : 'Ready'}
       </button>
 
       <h3>Players</h3>
 
       <PlayerList players={players} />
 
-      <p>
-        Waiting for host to start...
-      </p>
+      <p>Waiting for host to start...</p>
     </>
   )
 }
