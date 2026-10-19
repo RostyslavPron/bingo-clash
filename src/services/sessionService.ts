@@ -85,3 +85,19 @@ export async function joinGameSession(
 
   return session
 }
+
+export async function startGame(
+  sessionId: string
+) {
+  const { error } = await supabase
+    .from('game_sessions')
+    .update({
+      status: 'active',
+      started_at: new Date().toISOString(),
+    })
+    .eq('id', sessionId)
+
+  if (error) {
+    throw error
+  }
+}
