@@ -16,11 +16,12 @@ function generateInviteCode(): string {
 
 export async function createGameSession(
   gameName: string,
-  hostId: string
+  hostId: string,
+  displayName: string
 ) {
   const inviteCode = generateInviteCode()
 
-  const { data: session, error: sessionError } =
+  const { data: session, error } =
     await supabase
       .from('game_sessions')
       .insert({
@@ -31,8 +32,8 @@ export async function createGameSession(
       .select()
       .single()
 
-  if (sessionError) {
-    throw sessionError
+  if (error) {
+    throw error
   }
 
   const { error: playerError } =
@@ -41,7 +42,7 @@ export async function createGameSession(
       .insert({
         session_id: session.id,
         player_id: hostId,
-        display_name: 'Host',
+        display_name: displayName,
         is_host: true,
       })
 
@@ -57,15 +58,15 @@ export async function joinGameSession(
   playerId: string,
   displayName: string
 ) {
-  const { data: session, error: sessionError } =
+  const { data: session, error } =
     await supabase
       .from('game_sessions')
       .select('*')
       .eq('invite_code', inviteCode)
       .single()
 
-  if (sessionError) {
-    throw sessionError
+  if (error) {
+    throw error
   }
 
   const { error: playerError } =

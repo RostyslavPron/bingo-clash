@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import { createProfile } from './services/profileService'
-import { createGameSession } from './services/sessionService'
+import {
+  createGameSession,
+  joinGameSession,
+} from './services/sessionService'
 import { getPlayers } from './services/lobbyService'
 
 type Player = {
@@ -13,9 +16,20 @@ type Player = {
 function App() {
   const [userId, setUserId] = useState('')
   const [gameName, setGameName] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
+
+  const [hostName, setHostName] = useState('')
+  const [displayName, setDisplayName] =
+    useState('')
+
+  const [inviteCodeInput, setInviteCodeInput] =
+    useState('')
+
+  const [inviteCode, setInviteCode] =
+    useState('')
   const [sessionId, setSessionId] = useState('')
-  const [players, setPlayers] = useState<Player[]>([])
+  const [players, setPlayers] = useState<Player[]>(
+    []
+  )
 
   useEffect(() => {
     const authenticate = async () => {
@@ -47,7 +61,7 @@ function App() {
     loadPlayers()
 
     const channel = supabase
-      .channel('players')
+      .channel(`players-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -74,7 +88,19 @@ function App() {
   const handleCreateGame = async () => {
     const session = await createGameSession(
       gameName,
-      userId
+      userId,
+      hostName
+    )
+
+    setInviteCode(session.invite_code)
+    setSessionId(session.id)
+  }
+
+  const handleJoinGame = async () => {
+    const session = await joinGameSession(
+      inviteCodeInput.toUpperCase(),
+      userId,
+      displayName
     )
 
     setInviteCode(session.invite_code)
@@ -92,6 +118,20 @@ function App() {
 
       {!sessionId && (
         <>
+          <h2>Create Game</h2>
+
+          <input
+            type="text"
+            placeholder="Your Display Name"
+            value={hostName}
+            onChange={(e) =>
+              setHostName(e.target.value)
+            }
+          />
+
+          <br />
+          <br />
+
           <input
             type="text"
             placeholder="Game Name"
@@ -101,10 +141,45 @@ function App() {
             }
           />
 
-          <button
-            onClick={handleCreateGame}
-          >
+          <br />
+          <br />
+
+          <button onClick={handleCreateGame}>
             Create Game
+          </button>
+
+          <hr />
+
+          <h2>Join Game</h2>
+
+          <input
+            type="text"
+            placeholder="Display Name"
+            value={displayName}
+            onChange={(e) =>
+              setDisplayName(e.target.value)
+            }
+          />
+
+          <br />
+          <br />
+
+          <input
+            type="text"
+            placeholder="Invite Code"
+            value={inviteCodeInput}
+            onChange={(e) =>
+              setInviteCodeInput(
+                e.target.value
+              )
+            }
+          />
+
+          <br />
+          <br />
+
+          <button onClick={handleJoinGame}>
+            Join Game
           </button>
         </>
       )}
@@ -124,15 +199,15 @@ function App() {
             {players.map((player) => (
               <li key={player.id}>
                 {player.display_name}
-
-                {player.is_host &&
-                  ' (Host)'}
+                {player.is_host
+                  ? ' (Host)'
+                  : ''}
               </li>
             ))}
           </ul>
 
           <p>
-            Waiting for players...
+            Waiting for host to start...
           </p>
         </>
       )}
