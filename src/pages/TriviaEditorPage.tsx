@@ -12,6 +12,8 @@ type Question = {
 }
 
 type Props = {
+  status: string
+
   questions: Question[]
 
   questionText: string
@@ -53,6 +55,8 @@ type Props = {
 }
 
 export default function TriviaEditorPage({
+  status,
+
   questions,
 
   questionText,
@@ -76,117 +80,147 @@ export default function TriviaEditorPage({
   setCorrectAnswer,
 
   onCreateQuestion,
-
   onDeleteQuestion,
   onEditQuestion,
 }: Props) {
+  const isPublished =
+    status === 'published'
+
   return (
     <>
       <h3>
         Trivia Questions ({questions.length})
       </h3>
 
-      <input
-        type="text"
-        placeholder="Question"
-        value={questionText}
-        onChange={(e) =>
-          setQuestionText(
-            e.target.value
-          )
-        }
-      />
+      {isPublished && (
+        <p>
+          🔒 Published templates are
+          locked. Unpublish to edit
+          trivia questions.
+        </p>
+      )}
 
-      <br />
-      <br />
+      {!isPublished && (
+        <>
+          <input
+            type="text"
+            placeholder="Question"
+            value={questionText}
+            onChange={(e) =>
+              setQuestionText(
+                e.target.value
+              )
+            }
+          />
 
-      <input
-        type="number"
-        min="5"
-        max="120"
-        value={timeLimit}
-        onChange={(e) =>
-          setTimeLimit(
-            Number(e.target.value)
-          )
-        }
-      />
+          <br />
+          <br />
 
-      <br />
-      <br />
+          <input
+            type="number"
+            min="5"
+            max="120"
+            value={timeLimit}
+            onChange={(e) =>
+              setTimeLimit(
+                Number(e.target.value)
+              )
+            }
+          />
 
-      <input
-        type="text"
-        placeholder="Answer A"
-        value={answerA}
-        onChange={(e) =>
-          setAnswerA(e.target.value)
-        }
-      />
+          <br />
+          <br />
 
-      <br />
-      <br />
+          <input
+            type="text"
+            placeholder="Answer A"
+            value={answerA}
+            onChange={(e) =>
+              setAnswerA(
+                e.target.value
+              )
+            }
+          />
 
-      <input
-        type="text"
-        placeholder="Answer B"
-        value={answerB}
-        onChange={(e) =>
-          setAnswerB(e.target.value)
-        }
-      />
+          <br />
+          <br />
 
-      <br />
-      <br />
+          <input
+            type="text"
+            placeholder="Answer B"
+            value={answerB}
+            onChange={(e) =>
+              setAnswerB(
+                e.target.value
+              )
+            }
+          />
 
-      <input
-        type="text"
-        placeholder="Answer C"
-        value={answerC}
-        onChange={(e) =>
-          setAnswerC(e.target.value)
-        }
-      />
+          <br />
+          <br />
 
-      <br />
-      <br />
+          <input
+            type="text"
+            placeholder="Answer C"
+            value={answerC}
+            onChange={(e) =>
+              setAnswerC(
+                e.target.value
+              )
+            }
+          />
 
-      <input
-        type="text"
-        placeholder="Answer D"
-        value={answerD}
-        onChange={(e) =>
-          setAnswerD(e.target.value)
-        }
-      />
+          <br />
+          <br />
 
-      <br />
-      <br />
+          <input
+            type="text"
+            placeholder="Answer D"
+            value={answerD}
+            onChange={(e) =>
+              setAnswerD(
+                e.target.value
+              )
+            }
+          />
 
-      <select
-        value={correctAnswer}
-        onChange={(e) =>
-          setCorrectAnswer(
-            e.target.value
-          )
-        }
-      >
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-      </select>
+          <br />
+          <br />
 
-      <br />
-      <br />
+          <select
+            value={correctAnswer}
+            onChange={(e) =>
+              setCorrectAnswer(
+                e.target.value
+              )
+            }
+          >
+            <option value="A">
+              A
+            </option>
+            <option value="B">
+              B
+            </option>
+            <option value="C">
+              C
+            </option>
+            <option value="D">
+              D
+            </option>
+          </select>
 
-      <button
-        onClick={onCreateQuestion}
-      >
-        Add Question
-      </button>
+          <br />
+          <br />
 
-      <hr />
+          <button
+            onClick={onCreateQuestion}
+          >
+            Add Question
+          </button>
+
+          <hr />
+        </>
+      )}
 
       {questions.map((question) => (
         <div
@@ -218,28 +252,32 @@ export default function TriviaEditorPage({
             )}
           </ul>
 
-          <button
-            onClick={() =>
-              onEditQuestion(
-                question
-              )
-            }
-          >
-            Edit Question
-          </button>
+          {!isPublished && (
+            <>
+              <button
+                onClick={() =>
+                  onEditQuestion(
+                    question
+                  )
+                }
+              >
+                Edit Question
+              </button>
 
-          <button
-            onClick={() =>
-              onDeleteQuestion(
-                question.id
-              )
-            }
-            style={{
-              marginLeft: '10px',
-            }}
-          >
-            Delete Question
-          </button>
+              <button
+                onClick={() =>
+                  onDeleteQuestion(
+                    question.id
+                  )
+                }
+                style={{
+                  marginLeft: '10px',
+                }}
+              >
+                Delete Question
+              </button>
+            </>
+          )}
         </div>
       ))}
     </>

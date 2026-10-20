@@ -10,6 +10,8 @@ type Props = {
 
   entries: Entry[]
 
+  questionCount: number
+
   newEntry: string
 
   setNewEntry: (value: string) => void
@@ -22,7 +24,7 @@ type Props = {
 
   onPublish: () => void
 
-  onArchive: () => void
+  onUnpublish: () => void
 
   onBack: () => void
 }
@@ -32,22 +34,29 @@ export default function TemplateEditorPage({
   boardSize,
   status,
   entries,
+  questionCount,
   newEntry,
   setNewEntry,
   onAddEntry,
   onDeleteEntry,
   onPublish,
-  onArchive,
+  onUnpublish,
   onBack,
 }: Props) {
   const requiredEntries =
     boardSize * boardSize - 1
 
+  const entriesComplete =
+    entries.length >= requiredEntries
+
+  const isPublished =
+    status === 'published'
+
+  const templateReady =
+    entriesComplete && isPublished
+
   const remainingEntries =
     requiredEntries - entries.length
-
-  const canPublish =
-    entries.length >= requiredEntries
 
   return (
     <>
@@ -57,90 +66,120 @@ export default function TemplateEditorPage({
 
       <h2>{templateTitle}</h2>
 
-      <p>
-        Status: {status}
-      </p>
-
-      <p>
-        Board Size: {boardSize} x {boardSize}
-      </p>
-
-      <p>
-        Entries Added: {entries.length}
-      </p>
-
-      <p>
-        Entries Remaining: {remainingEntries}
-      </p>
-
-      {canPublish ? (
-        <p>✅ Ready To Publish</p>
-      ) : (
-        <p>
-          ❌ Need {remainingEntries}{' '}
-          more entries
-        </p>
-      )}
-
-      <button
-        disabled={!canPublish}
-        onClick={onPublish}
-      >
-        Publish
-      </button>
-
-      <button
-        onClick={onArchive}
-        style={{
-          marginLeft: '10px',
-        }}
-      >
-        Archive
-      </button>
+      <p>Status: {status}</p>
 
       <hr />
 
-      {entries.length <
-        requiredEntries && (
+      <h3>Template Health</h3>
+
+      <p>
+        {entriesComplete
+          ? '✅'
+          : '❌'} Entries Complete (
+        {entries.length} /{' '}
+        {requiredEntries})
+      </p>
+
+      <p>
+        ✅ Trivia Questions (
+        {questionCount})
+      </p>
+
+      <p>
+        {isPublished
+          ? '✅'
+          : '❌'} Published
+      </p>
+
+      <p>
+        <strong>
+          {templateReady
+            ? 'READY FOR GAME SESSION'
+            : 'NOT READY'}
+        </strong>
+      </p>
+
+      <hr />
+
+      {isPublished ? (
         <>
-          <input
-            type="text"
-            placeholder="New Entry"
-            value={newEntry}
-            onChange={(e) =>
-              setNewEntry(
-                e.target.value
-              )
-            }
-          />
+          <p>
+            🔒 Published templates are
+            locked.
+          </p>
 
           <button
-            onClick={onAddEntry}
+            onClick={onUnpublish}
           >
-            Add Entry
+            Unpublish
           </button>
-
-          <hr />
         </>
+      ) : (
+        <button
+          disabled={!entriesComplete}
+          onClick={onPublish}
+        >
+          Publish
+        </button>
       )}
+
+      <hr />
+
+      <p>
+        Board Size: {boardSize} x{' '}
+        {boardSize}
+      </p>
+
+      <p>
+        Entries Remaining:{' '}
+        {remainingEntries}
+      </p>
+
+      {!isPublished &&
+        entries.length <
+          requiredEntries && (
+          <>
+            <input
+              type="text"
+              placeholder="New Entry"
+              value={newEntry}
+              onChange={(e) =>
+                setNewEntry(
+                  e.target.value
+                )
+              }
+            />
+
+            <button
+              onClick={onAddEntry}
+            >
+              Add Entry
+            </button>
+
+            <hr />
+          </>
+        )}
 
       <ul>
         {entries.map((entry) => (
           <li key={entry.id}>
             {entry.entry_text}
 
-            <button
-              onClick={() =>
-                onDeleteEntry(
-                  entry.id
-                )
-              }
-              style={{
-                marginLeft: '10px',
-              }}
-            >
-              Delete
-            </button>
+            {!isPublished && (
+              <button
+                onClick={() =>
+                  onDeleteEntry(
+                    entry.id
+                  )
+                }
+                style={{
+                  marginLeft:
+                    '10px',
+                }}
+              >
+                Delete
+              </button>
+            )}
           </li>
         ))}
       </ul>

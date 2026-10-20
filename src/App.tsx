@@ -15,7 +15,7 @@ import {
   addTemplateEntry,
   deleteTemplateEntry,
   publishTemplate,
-  archiveTemplate,
+  unpublishTemplate,
   deleteTemplate,
 } from './services/templateService'
 
@@ -248,17 +248,17 @@ function App() {
       await loadTemplates()
     }
 
-  const handleArchive =
+  const handleUnpublish =
     async () => {
       if (!selectedTemplate) return
 
-      await archiveTemplate(
-        selectedTemplate.id
+      await unpublishTemplate(
+       selectedTemplate.id
       )
 
       setSelectedTemplate({
         ...selectedTemplate,
-        status: 'archived',
+        status: 'draft',
       })
 
       await loadTemplates()
@@ -514,24 +514,24 @@ function App() {
                 selectedTemplate.status
               }
               entries={entries}
+              questionCount={
+                questions.length
+              }
               newEntry={newEntry}
               setNewEntry={setNewEntry}
-              onAddEntry={
-                handleAddEntry
-              }
+              onAddEntry={handleAddEntry}
               onDeleteEntry={
                 handleDeleteEntry
               }
-              onPublish={
-                handlePublish
-              }
-              onArchive={
-                handleArchive
-              }
+              onPublish={handlePublish}
+              onUnpublish={handleUnpublish}
               onBack={handleBack}
             />
           ) : (
             <TriviaEditorPage
+              status={
+                selectedTemplate.status
+              }
               questions={questions}
               questionText={questionText}
               timeLimit={timeLimit}

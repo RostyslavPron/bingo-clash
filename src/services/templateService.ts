@@ -11,13 +11,12 @@ export async function createTemplate(
       owner_id: ownerId,
       title,
       board_size: boardSize,
+      status: 'draft',
     })
     .select()
     .single()
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 
   return data
 }
@@ -33,9 +32,7 @@ export async function getTemplates(
       ascending: false,
     })
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 
   return data
 }
@@ -49,9 +46,7 @@ export async function getTemplateEntries(
     .eq('template_id', templateId)
     .order('created_at')
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 
   return data
 }
@@ -67,9 +62,7 @@ export async function addTemplateEntry(
       entry_text: entryText,
     })
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
 
 export async function deleteTemplateEntry(
@@ -80,9 +73,7 @@ export async function deleteTemplateEntry(
     .delete()
     .eq('id', entryId)
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
 
 export async function publishTemplate(
@@ -95,24 +86,20 @@ export async function publishTemplate(
     })
     .eq('id', templateId)
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
 
-export async function archiveTemplate(
+export async function unpublishTemplate(
   templateId: string
 ) {
   const { error } = await supabase
     .from('bingo_templates')
     .update({
-      status: 'archived',
+      status: 'draft',
     })
     .eq('id', templateId)
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
 
 export async function deleteTemplate(
@@ -123,7 +110,5 @@ export async function deleteTemplate(
     .delete()
     .eq('id', templateId)
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
