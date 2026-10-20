@@ -84,3 +84,33 @@ export async function deleteTemplateEntry(
     throw error
   }
 }
+
+export async function publishTemplate(
+  templateId: string
+) {
+  const { error } = await supabase
+    .from('bingo_templates')
+    .update({
+      status: 'published',
+    })
+    .eq('id', templateId)
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function archiveTemplate(
+  templateId: string
+) {
+  const { error } = await supabase
+    .from('bingo_templates')
+    .update({
+      status: 'archived',
+    })
+    .eq('id', templateId)
+
+  if (error) {
+    throw error
+  }
+}

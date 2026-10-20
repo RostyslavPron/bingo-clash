@@ -4,6 +4,8 @@ import { createProfile } from './services/profileService'
 
 import TemplatesPage from './pages/TemplatesPage'
 import TemplateEditorPage from './pages/TemplateEditorPage'
+import TriviaEditorPage from './pages/TriviaEditorPage'
+import TemplateContentPage from './pages/TemplateContentPage'
 
 import {
   createTemplate,
@@ -11,7 +13,15 @@ import {
   getTemplateEntries,
   addTemplateEntry,
   deleteTemplateEntry,
+  publishTemplate,
+  archiveTemplate,
 } from './services/templateService'
+
+import {
+  getQuestions,
+  createQuestion,
+  createAnswer,
+} from './services/triviaService'
 
 type Template = {
   id: string
@@ -25,8 +35,15 @@ type Entry = {
   entry_text: string
 }
 
+type Question = {
+  id: string
+  question_text: string
+  time_limit_seconds: number
+}
+
 function App() {
   const [userId, setUserId] = useState('')
+
   const [title, setTitle] = useState('')
   const [boardSize, setBoardSize] =
     useState(5)
@@ -37,12 +54,37 @@ function App() {
   const [selectedTemplate, setSelectedTemplate] =
     useState<Template | null>(null)
 
-  const [entries, setEntries] = useState<
-    Entry[]
-  >([])
+  const [entries, setEntries] =
+    useState<Entry[]>([])
+
+  const [questions, setQuestions] =
+    useState<Question[]>([])
 
   const [newEntry, setNewEntry] =
     useState('')
+
+  const [activeTab, setActiveTab] =
+    useState<'entries' | 'trivia'>(
+      'entries'
+    )
+
+  const [questionText, setQuestionText] =
+    useState('')
+
+  const [answerA, setAnswerA] =
+    useState('')
+
+  const [answerB, setAnswerB] =
+    useState('')
+
+  const [answerC, setAnswerC] =
+    useState('')
+
+  const [answerD, setAnswerD] =
+    useState('')
+
+  const [correctAnswer, setCorrectAnswer] =
+    useState('A')
 
   useEffect(() => {
     const init = async () => {
@@ -56,7 +98,6 @@ function App() {
 
         if (data.user) {
           await createProfile(data.user.id)
-
           setUserId(data.user.id)
         }
 
@@ -101,13 +142,23 @@ function App() {
     async (template: Template) => {
       setSelectedTemplate(template)
 
-      const data =
+      const entryData =
         await getTemplateEntries(
           template.id
         )
 
-      setEntries(data)
+      const questionData =
+        await getQuestions(template.id)
+
+      setEntries(entryData)
+      setQuestions(questionData)
     }
+
+  const handleBack = async () => {
+    setSelectedTemplate(null)
+
+    await loadTemplates()
+  }
 
   const handleAddEntry = async () => {
     if (!selectedTemplate) return
@@ -143,39 +194,98 @@ function App() {
       setEntries(data)
     }
 
-  const handleBack = () => {
-    setSelectedTemplate(null)
-    setEntries([])
-    setNewEntry('')
-  }
+  const handlePublish =
+    async () => {
+      if (!selectedTemplate) return
+
+      await publishTemplate(
+        selectedTemplate.id
+      )
+
+      setSelectedTemplate({
+        ...selectedTemplate,
+        status: 'published',
+      })
+
+      await loadTemplates()
+    }
+
+  const handleArchive =
+    async () => {
+      if (!selectedTemplate) return
+
+      await archiveTemplate(
+        selectedTemplate.id
+      )
+
+      setSelectedTemplate({
+        ...selectedTemplate,
+        status: 'archived',
+      })
+
+      await loadTemplates()
+    }
+
+  const handleCreateQuestion =
+    async () => {
+      if (!selectedTemplate) return
+
+      const question =
+        await createQuestion(
+          selectedTemplate.id,
+          questionText,
+          15
+        )
+
+      await createAnswer(
+        question.id,
+        answerA,
+        correctAnswer === 'A'
+      )
+
+      await createAnswer(
+        question.id,
+        answerB,
+        correctAnswer === 'B'
+      )
+
+      await createAnswer(
+        question.id,
+        answerC,
+        correctAnswer === 'C'
+      )
+
+      await createAnswer(
+        question.id,
+        answerD,
+        correctAnswer === 'D'
+      )
+
+      setQuestionText('')
+      setAnswerA('')
+      setAnswerB('')
+      setAnswerC('')
+      setAnswerD('')
+      setCorrectAnswer('A')
+
+      const data =
+        await getQuestions(
+          selectedTemplate.id
+        )
+
+      setQuestions(data)
+    }
 
   return (
     <div
       style={{
         padding: '20px',
-        maxWidth: '800px',
+        maxWidth: '900px',
       }}
     >
       <h1>Bingo Clash</h1>
 
-      {selectedTemplate ? (
-        <TemplateEditorPage
-          templateTitle={
-            selectedTemplate.title
-          }
-          boardSize={
-            selectedTemplate.board_size
-          }
-          entries={entries}
-          newEntry={newEntry}
-          setNewEntry={setNewEntry}
-          onAddEntry={handleAddEntry}
-          onDeleteEntry={
-            handleDeleteEntry
-          }
-          onBack={handleBack}
-        />
-      ) : (
+      {!selectedTemplate ? (
         <TemplatesPage
           templates={templates}
           title={title}
@@ -189,6 +299,73 @@ function App() {
             handleSelectTemplate
           }
         />
+      ) : (
+        <>
+          <TemplateContentPage
+            templateTitle={
+              selectedTemplate.title
+            }
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          >
+            {activeTab === 'entries' ? (
+              <TemplateEditorPage
+                templateTitle={
+                  selectedTemplate.title
+                }
+                boardSize={
+                  selectedTemplate.board_size
+                }
+                status={
+                  selectedTemplate.status
+                }
+                entries={entries}
+                newEntry={newEntry}
+                setNewEntry={setNewEntry}
+                onAddEntry={
+                  handleAddEntry
+                }
+                onDeleteEntry={
+                  handleDeleteEntry
+                }
+                onPublish={
+                  handlePublish
+                }
+                onArchive={
+                  handleArchive
+                }
+                onBack={handleBack}
+              />
+            ) : (
+              <TriviaEditorPage
+                questions={questions}
+                questionText={
+                  questionText
+                }
+                answerA={answerA}
+                answerB={answerB}
+                answerC={answerC}
+                answerD={answerD}
+                correctAnswer={
+                  correctAnswer
+                }
+                setQuestionText={
+                  setQuestionText
+                }
+                setAnswerA={setAnswerA}
+                setAnswerB={setAnswerB}
+                setAnswerC={setAnswerC}
+                setAnswerD={setAnswerD}
+                setCorrectAnswer={
+                  setCorrectAnswer
+                }
+                onCreateQuestion={
+                  handleCreateQuestion
+                }
+              />
+            )}
+          </TemplateContentPage>
+        </>
       )}
     </div>
   )

@@ -6,6 +6,7 @@ type Entry = {
 type Props = {
   templateTitle: string
   boardSize: number
+  status: string
 
   entries: Entry[]
 
@@ -14,9 +15,14 @@ type Props = {
   setNewEntry: (value: string) => void
 
   onAddEntry: () => void
+
   onDeleteEntry: (
     entryId: string
   ) => void
+
+  onPublish: () => void
+
+  onArchive: () => void
 
   onBack: () => void
 }
@@ -24,11 +30,14 @@ type Props = {
 export default function TemplateEditorPage({
   templateTitle,
   boardSize,
+  status,
   entries,
   newEntry,
   setNewEntry,
   onAddEntry,
   onDeleteEntry,
+  onPublish,
+  onArchive,
   onBack,
 }: Props) {
   const requiredEntries =
@@ -37,8 +46,8 @@ export default function TemplateEditorPage({
   const remainingEntries =
     requiredEntries - entries.length
 
-  const canAdd =
-    entries.length < requiredEntries
+  const canPublish =
+    entries.length >= requiredEntries
 
   return (
     <>
@@ -49,6 +58,10 @@ export default function TemplateEditorPage({
       <h2>{templateTitle}</h2>
 
       <p>
+        Status: {status}
+      </p>
+
+      <p>
         Board Size: {boardSize} x {boardSize}
       </p>
 
@@ -57,11 +70,38 @@ export default function TemplateEditorPage({
       </p>
 
       <p>
-        Entries Remaining:{' '}
-        {remainingEntries}
+        Entries Remaining: {remainingEntries}
       </p>
 
-      {canAdd && (
+      {canPublish ? (
+        <p>✅ Ready To Publish</p>
+      ) : (
+        <p>
+          ❌ Need {remainingEntries}{' '}
+          more entries
+        </p>
+      )}
+
+      <button
+        disabled={!canPublish}
+        onClick={onPublish}
+      >
+        Publish
+      </button>
+
+      <button
+        onClick={onArchive}
+        style={{
+          marginLeft: '10px',
+        }}
+      >
+        Archive
+      </button>
+
+      <hr />
+
+      {entries.length <
+        requiredEntries && (
         <>
           <input
             type="text"
@@ -74,19 +114,15 @@ export default function TemplateEditorPage({
             }
           />
 
-          <button onClick={onAddEntry}>
+          <button
+            onClick={onAddEntry}
+          >
             Add Entry
           </button>
+
+          <hr />
         </>
       )}
-
-      {!canAdd && (
-        <p>
-          ✅ Required entries complete
-        </p>
-      )}
-
-      <hr />
 
       <ul>
         {entries.map((entry) => (
@@ -95,7 +131,9 @@ export default function TemplateEditorPage({
 
             <button
               onClick={() =>
-                onDeleteEntry(entry.id)
+                onDeleteEntry(
+                  entry.id
+                )
               }
               style={{
                 marginLeft: '10px',
