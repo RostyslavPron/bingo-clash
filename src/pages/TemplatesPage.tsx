@@ -15,8 +15,13 @@ type Props = {
   setBoardSize: (value: number) => void
 
   onCreateTemplate: () => void
+
   onSelectTemplate: (
     template: Template
+  ) => void
+
+  onDeleteTemplate: (
+    templateId: string
   ) => void
 }
 
@@ -28,6 +33,7 @@ export default function TemplatesPage({
   setBoardSize,
   onCreateTemplate,
   onSelectTemplate,
+  onDeleteTemplate,
 }: Props) {
   return (
     <>
@@ -48,7 +54,9 @@ export default function TemplatesPage({
       <select
         value={boardSize}
         onChange={(e) =>
-          setBoardSize(Number(e.target.value))
+          setBoardSize(
+            Number(e.target.value)
+          )
         }
       >
         <option value={5}>5 x 5</option>
@@ -68,27 +76,46 @@ export default function TemplatesPage({
       {templates.map((template) => (
         <div
           key={template.id}
-          onClick={() =>
-            onSelectTemplate(template)
-          }
           style={{
             border: '1px solid #ccc',
             padding: '12px',
             marginBottom: '12px',
-            cursor: 'pointer',
           }}
         >
-          <h3>{template.title}</h3>
+          <div
+            onClick={() =>
+              onSelectTemplate(template)
+            }
+            style={{
+              cursor: 'pointer',
+            }}
+          >
+            <h3>{template.title}</h3>
 
-          <p>
-            Board Size:{' '}
-            {template.board_size} x{' '}
-            {template.board_size}
-          </p>
+            <p>
+              Board Size:
+              {' '}
+              {template.board_size}
+              {' x '}
+              {template.board_size}
+            </p>
 
-          <p>
-            Status: {template.status}
-          </p>
+            <p>
+              Status:
+              {' '}
+              {template.status}
+            </p>
+          </div>
+
+          <button
+            onClick={() =>
+              onDeleteTemplate(
+                template.id
+              )
+            }
+          >
+            Delete Template
+          </button>
         </div>
       ))}
     </>

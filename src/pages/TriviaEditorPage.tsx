@@ -1,149 +1,184 @@
-type Entry = {
+type Question = {
   id: string
-  entry_text: string
+  question_text: string
+  time_limit_seconds: number
 }
 
 type Props = {
-  templateTitle: string
-  boardSize: number
-  status: string
+  questions: Question[]
 
-  entries: Entry[]
+  questionText: string
 
-  newEntry: string
+  answerA: string
+  answerB: string
+  answerC: string
+  answerD: string
 
-  setNewEntry: (value: string) => void
+  correctAnswer: string
 
-  onAddEntry: () => void
-  onDeleteEntry: (
-    entryId: string
+  setQuestionText: (
+    value: string
   ) => void
 
-  onPublish: () => void
-  onArchive: () => void
+  setAnswerA: (value: string) => void
+  setAnswerB: (value: string) => void
+  setAnswerC: (value: string) => void
+  setAnswerD: (value: string) => void
 
-  onBack: () => void
+  setCorrectAnswer: (
+    value: string
+  ) => void
+
+  onCreateQuestion: () => void
 }
 
-export default function TemplateEditorPage({
-  templateTitle,
-  boardSize,
-  status,
-  entries,
-  newEntry,
-  setNewEntry,
-  onAddEntry,
-  onDeleteEntry,
-  onPublish,
-  onArchive,
-  onBack,
+export default function TriviaEditorPage({
+  questions,
+
+  questionText,
+
+  answerA,
+  answerB,
+  answerC,
+  answerD,
+
+  correctAnswer,
+
+  setQuestionText,
+
+  setAnswerA,
+  setAnswerB,
+  setAnswerC,
+  setAnswerD,
+
+  setCorrectAnswer,
+
+  onCreateQuestion,
 }: Props) {
-  const requiredEntries =
-    boardSize * boardSize - 1
-
-  const remainingEntries =
-    requiredEntries - entries.length
-
-  const canPublish =
-    entries.length >= requiredEntries
-
   return (
     <>
-      <button onClick={onBack}>
-        ← Back To Templates
-      </button>
+      <h3>Trivia Questions</h3>
 
-      <h2>{templateTitle}</h2>
+      <input
+        type="text"
+        placeholder="Question"
+        value={questionText}
+        onChange={(e) =>
+          setQuestionText(
+            e.target.value
+          )
+        }
+      />
 
-      <p>Status: {status}</p>
+      <br />
+      <br />
 
-      <p>
-        Board Size: {boardSize} x {boardSize}
-      </p>
+      <input
+        type="text"
+        placeholder="Answer A"
+        value={answerA}
+        onChange={(e) =>
+          setAnswerA(e.target.value)
+        }
+      />
 
-      <p>
-        Entries Added: {entries.length}
-      </p>
+      <br />
+      <br />
 
-      <p>
-        Entries Remaining:
-        {' '}
-        {remainingEntries}
-      </p>
+      <input
+        type="text"
+        placeholder="Answer B"
+        value={answerB}
+        onChange={(e) =>
+          setAnswerB(e.target.value)
+        }
+      />
 
-      {canPublish ? (
-        <p>
-          ✅ Ready To Publish
-        </p>
-      ) : (
-        <p>
-          ❌ More entries required
-        </p>
-      )}
+      <br />
+      <br />
+
+      <input
+        type="text"
+        placeholder="Answer C"
+        value={answerC}
+        onChange={(e) =>
+          setAnswerC(e.target.value)
+        }
+      />
+
+      <br />
+      <br />
+
+      <input
+        type="text"
+        placeholder="Answer D"
+        value={answerD}
+        onChange={(e) =>
+          setAnswerD(e.target.value)
+        }
+      />
+
+      <br />
+      <br />
+
+      <select
+        value={correctAnswer}
+        onChange={(e) =>
+          setCorrectAnswer(
+            e.target.value
+          )
+        }
+      >
+        <option value="A">
+          A
+        </option>
+
+        <option value="B">
+          B
+        </option>
+
+        <option value="C">
+          C
+        </option>
+
+        <option value="D">
+          D
+        </option>
+      </select>
+
+      <br />
+      <br />
 
       <button
-        disabled={!canPublish}
-        onClick={onPublish}
+        onClick={onCreateQuestion}
       >
-        Publish
-      </button>
-
-      <button
-        onClick={onArchive}
-        style={{
-          marginLeft: '10px',
-        }}
-      >
-        Archive
+        Add Question
       </button>
 
       <hr />
 
-      {entries.length <
-        requiredEntries && (
-        <>
-          <input
-            type="text"
-            placeholder="New Entry"
-            value={newEntry}
-            onChange={(e) =>
-              setNewEntry(
-                e.target.value
-              )
+      {questions.map((question) => (
+        <div
+          key={question.id}
+          style={{
+            border: '1px solid #ccc',
+            padding: '12px',
+            marginBottom: '12px',
+          }}
+        >
+          <strong>
+            {question.question_text}
+          </strong>
+
+          <p>
+            Timer:{' '}
+            {
+              question.time_limit_seconds
             }
-          />
-
-          <button
-            onClick={onAddEntry}
-          >
-            Add Entry
-          </button>
-        </>
-      )}
-
-      <hr />
-
-      <ul>
-        {entries.map((entry) => (
-          <li key={entry.id}>
-            {entry.entry_text}
-
-            <button
-              onClick={() =>
-                onDeleteEntry(
-                  entry.id
-                )
-              }
-              style={{
-                marginLeft:
-                  '10px',
-              }}
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+            s
+          </p>
+        </div>
+      ))}
     </>
   )
 }

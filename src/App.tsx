@@ -15,6 +15,7 @@ import {
   deleteTemplateEntry,
   publishTemplate,
   archiveTemplate,
+  deleteTemplate,
 } from './services/templateService'
 
 import {
@@ -210,6 +211,22 @@ function App() {
       await loadTemplates()
     }
 
+  const handleDeleteTemplate =
+  async (
+    templateId: string
+  ) => {
+    const confirmed =
+      window.confirm(
+        'Delete this template?'
+      )
+
+    if (!confirmed) return
+
+    await deleteTemplate(templateId)
+
+    await loadTemplates()
+  }
+
   const handleArchive =
     async () => {
       if (!selectedTemplate) return
@@ -292,12 +309,9 @@ function App() {
           boardSize={boardSize}
           setTitle={setTitle}
           setBoardSize={setBoardSize}
-          onCreateTemplate={
-            handleCreateTemplate
-          }
-          onSelectTemplate={
-            handleSelectTemplate
-          }
+          onCreateTemplate={handleCreateTemplate}
+          onSelectTemplate={handleSelectTemplate}
+          onDeleteTemplate={handleDeleteTemplate}
         />
       ) : (
         <>

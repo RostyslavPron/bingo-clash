@@ -114,3 +114,16 @@ export async function archiveTemplate(
     throw error
   }
 }
+
+export async function deleteTemplate(
+  templateId: string
+) {
+  const { error } = await supabase
+    .from('bingo_templates')
+    .delete()
+    .eq('id', templateId)
+
+  if (error) {
+    throw error
+  }
+}
