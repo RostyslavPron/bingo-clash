@@ -8,6 +8,11 @@ import TriviaEditorPage from './pages/TriviaEditorPage'
 import TemplateContentPage from './pages/TemplateContentPage'
 import EditQuestionPage from './pages/EditQuestionPage'
 
+import SessionLobbyPage from './pages/SessionLobbyPage'
+
+import {createGameSession,} from './services/sessionService'
+
+
 import {
   createTemplate,
   getTemplates,
@@ -103,6 +108,9 @@ function App() {
 
   const [editingQuestion, setEditingQuestion] =
     useState<Question | null>(null)
+  
+  const [activeSession, setActiveSession] =
+    useState<any>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -324,6 +332,28 @@ function App() {
       )
     }
 
+  const handleCreateSession =
+  async () => {
+    if (!selectedTemplate)
+      return
+
+    if (
+      selectedTemplate.status !==
+      'published'
+    )
+      return
+
+    const session =
+      await createGameSession(
+        selectedTemplate.id,
+        selectedTemplate.title,
+        userId,
+        'Host'
+      )
+
+    setActiveSession(session)
+  }
+
   const handleDeleteQuestion =
     async (questionId: string) => {
       if (!selectedTemplate) return
@@ -479,7 +509,19 @@ function App() {
       />
     )
   }
-
+  
+  if (activeSession) {
+    return (
+      <SessionLobbyPage
+        gameName={
+         activeSession.game_name
+        }
+        inviteCode={
+          activeSession.invite_code
+       }
+      />
+   )
+  } 
   return (
     <div
       style={{
@@ -519,6 +561,9 @@ function App() {
         >
           {activeTab === 'entries' ? (
             <TemplateEditorPage
+              onCreateSession={
+                 handleCreateSession
+              }
               templateTitle={
                 selectedTemplate.title
               }

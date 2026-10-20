@@ -26,6 +26,8 @@ type Props = {
 
   onUnpublish: () => void
 
+  onCreateSession: () => void
+
   onBack: () => void
 }
 
@@ -41,6 +43,7 @@ export default function TemplateEditorPage({
   onDeleteEntry,
   onPublish,
   onUnpublish,
+  onCreateSession,
   onBack,
 }: Props) {
   const requiredEntries =
@@ -112,6 +115,15 @@ export default function TemplateEditorPage({
             onClick={onUnpublish}
           >
             Unpublish
+          </button>
+
+          <button
+            onClick={onCreateSession}
+            style={{
+              marginLeft: '10px',
+            }}
+          >
+            Create Session
           </button>
         </>
       ) : (

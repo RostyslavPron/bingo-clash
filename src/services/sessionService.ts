@@ -1,13 +1,16 @@
 import { supabase } from '../lib/supabase'
 
 function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const chars =
+    'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
   let result = ''
 
   for (let i = 0; i < 6; i++) {
     result += chars.charAt(
-      Math.floor(Math.random() * chars.length)
+      Math.floor(
+        Math.random() * chars.length
+      )
     )
   }
 
@@ -15,19 +18,23 @@ function generateInviteCode(): string {
 }
 
 export async function createGameSession(
+  templateId: string,
   gameName: string,
   hostId: string,
   displayName: string
 ) {
-  const inviteCode = generateInviteCode()
+  const inviteCode =
+    generateInviteCode()
 
   const { data: session, error } =
     await supabase
       .from('game_sessions')
       .insert({
+        template_id: templateId,
         game_name: gameName,
         invite_code: inviteCode,
         host_id: hostId,
+        status: 'lobby',
       })
       .select()
       .single()
@@ -44,6 +51,7 @@ export async function createGameSession(
         player_id: hostId,
         display_name: displayName,
         is_host: true,
+        is_ready: true,
       })
 
   if (playerError) {
@@ -77,6 +85,7 @@ export async function joinGameSession(
         player_id: playerId,
         display_name: displayName,
         is_host: false,
+        is_ready: false,
       })
 
   if (playerError) {
@@ -93,7 +102,8 @@ export async function startGame(
     .from('game_sessions')
     .update({
       status: 'active',
-      started_at: new Date().toISOString(),
+      started_at:
+        new Date().toISOString(),
     })
     .eq('id', sessionId)
 
