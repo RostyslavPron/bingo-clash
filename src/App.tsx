@@ -1,182 +1,152 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import { createProfile } from './services/profileService'
-import {
-  createGameSession,
-  joinGameSession,
-  startGame,
-} from './services/sessionService'
-import {
-  getPlayers,
-  updateReadyStatus,
-} from './services/lobbyService'
 
-import HomePage from './pages/HomePage'
-import LobbyPage from './pages/LobbyPage'
-import GamePage from './pages/GamePage'
+import TemplatesPage from './pages/TemplatesPage'
+import TemplateEditorPage from './pages/TemplateEditorPage'
 
-type Player = {
+import {
+  createTemplate,
+  getTemplates,
+  getTemplateEntries,
+  addTemplateEntry,
+  deleteTemplateEntry,
+} from './services/templateService'
+
+type Template = {
   id: string
-  player_id: string
-  display_name: string
-  is_host: boolean
-  is_ready: boolean
+  title: string
+  board_size: number
+  status: string
+}
+
+type Entry = {
+  id: string
+  entry_text: string
 }
 
 function App() {
   const [userId, setUserId] = useState('')
-  const [gameName, setGameName] = useState('')
-  const [hostName, setHostName] = useState('')
-  const [displayName, setDisplayName] =
-    useState('')
+  const [title, setTitle] = useState('')
+  const [boardSize, setBoardSize] =
+    useState(5)
 
-  const [inviteCodeInput, setInviteCodeInput] =
-    useState('')
+  const [templates, setTemplates] =
+    useState<Template[]>([])
 
-  const [inviteCode, setInviteCode] =
-    useState('')
-  const [sessionId, setSessionId] = useState('')
-  const [players, setPlayers] = useState<Player[]>(
-    []
-  )
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<Template | null>(null)
 
-  const [gameStarted, setGameStarted] =
-    useState(false)
+  const [entries, setEntries] = useState<
+    Entry[]
+  >([])
+
+  const [newEntry, setNewEntry] =
+    useState('')
 
   useEffect(() => {
-    const authenticate = async () => {
+    const init = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession()
 
-      if (session) {
-        await createProfile(session.user.id)
-        setUserId(session.user.id)
+      if (!session) {
+        const { data } =
+          await supabase.auth.signInAnonymously()
+
+        if (data.user) {
+          await createProfile(data.user.id)
+
+          setUserId(data.user.id)
+        }
+
         return
       }
 
-      const { data } =
-        await supabase.auth.signInAnonymously()
+      await createProfile(session.user.id)
 
-      if (data.user) {
-        await createProfile(data.user.id)
-        setUserId(data.user.id)
-      }
+      setUserId(session.user.id)
     }
 
-    authenticate()
+    init()
   }, [])
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!userId) return
 
-    loadPlayers()
+    loadTemplates()
+  }, [userId])
 
-    const playerChannel = supabase
-      .channel(`players-${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_players',
-        },
-        () => {
-          loadPlayers()
-        }
+  const loadTemplates = async () => {
+    const data =
+      await getTemplates(userId)
+
+    setTemplates(data)
+  }
+
+  const handleCreateTemplate =
+    async () => {
+      await createTemplate(
+        userId,
+        title,
+        boardSize
       )
-      .subscribe()
 
-    const sessionChannel = supabase
-      .channel(`session-${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'game_sessions',
-        },
-        (payload) => {
-          const updatedSession =
-            payload.new as {
-              status: string
-            }
+      setTitle('')
 
-          if (
-            updatedSession.status ===
-            'active'
-          ) {
-            setGameStarted(true)
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(playerChannel)
-      supabase.removeChannel(sessionChannel)
+      await loadTemplates()
     }
-  }, [sessionId])
 
-  const loadPlayers = async () => {
-    const data = await getPlayers(sessionId)
-    setPlayers(data)
-  }
+  const handleSelectTemplate =
+    async (template: Template) => {
+      setSelectedTemplate(template)
 
-  const handleCreateGame = async () => {
-    const session = await createGameSession(
-      gameName,
-      userId,
-      hostName
+      const data =
+        await getTemplateEntries(
+          template.id
+        )
+
+      setEntries(data)
+    }
+
+  const handleAddEntry = async () => {
+    if (!selectedTemplate) return
+
+    if (!newEntry.trim()) return
+
+    await addTemplateEntry(
+      selectedTemplate.id,
+      newEntry.trim()
     )
 
-    setInviteCode(session.invite_code)
-    setSessionId(session.id)
+    setNewEntry('')
+
+    const data =
+      await getTemplateEntries(
+        selectedTemplate.id
+      )
+
+    setEntries(data)
   }
 
-  const handleJoinGame = async () => {
-    const session = await joinGameSession(
-      inviteCodeInput.toUpperCase(),
-      userId,
-      displayName
-    )
+  const handleDeleteEntry =
+    async (entryId: string) => {
+      await deleteTemplateEntry(entryId)
 
-    setInviteCode(session.invite_code)
-    setSessionId(session.id)
-  }
+      if (!selectedTemplate) return
 
-  const currentPlayer = players.find(
-    (player) =>
-      player.player_id === userId
-  )
+      const data =
+        await getTemplateEntries(
+          selectedTemplate.id
+        )
 
-  const isHost =
-    currentPlayer?.is_host ?? false
+      setEntries(data)
+    }
 
-  const allPlayersReady =
-    players.length > 0 &&
-    players.every(
-      (player) => player.is_ready
-    )
-
-  const toggleReady = async () => {
-    if (!currentPlayer) return
-
-    await updateReadyStatus(
-      userId,
-      sessionId,
-      !currentPlayer.is_ready
-    )
-  }
-
-  const handleStartGame = async () => {
-    await startGame(sessionId)
-
-    setGameStarted(true)
-  }
-
-  if (gameStarted) {
-    return <GamePage />
+  const handleBack = () => {
+    setSelectedTemplate(null)
+    setEntries([])
+    setNewEntry('')
   }
 
   return (
@@ -188,32 +158,36 @@ function App() {
     >
       <h1>Bingo Clash</h1>
 
-      {!sessionId ? (
-        <HomePage
-          hostName={hostName}
-          gameName={gameName}
-          displayName={displayName}
-          inviteCodeInput={inviteCodeInput}
-          setHostName={setHostName}
-          setGameName={setGameName}
-          setDisplayName={setDisplayName}
-          setInviteCodeInput={
-            setInviteCodeInput
+      {selectedTemplate ? (
+        <TemplateEditorPage
+          templateTitle={
+            selectedTemplate.title
           }
-          onCreateGame={handleCreateGame}
-          onJoinGame={handleJoinGame}
+          boardSize={
+            selectedTemplate.board_size
+          }
+          entries={entries}
+          newEntry={newEntry}
+          setNewEntry={setNewEntry}
+          onAddEntry={handleAddEntry}
+          onDeleteEntry={
+            handleDeleteEntry
+          }
+          onBack={handleBack}
         />
       ) : (
-        <LobbyPage
-          inviteCode={inviteCode}
-          players={players}
-          isReady={
-            currentPlayer?.is_ready ?? false
+        <TemplatesPage
+          templates={templates}
+          title={title}
+          boardSize={boardSize}
+          setTitle={setTitle}
+          setBoardSize={setBoardSize}
+          onCreateTemplate={
+            handleCreateTemplate
           }
-          isHost={isHost}
-          allPlayersReady={allPlayersReady}
-          onToggleReady={toggleReady}
-          onStartGame={handleStartGame}
+          onSelectTemplate={
+            handleSelectTemplate
+          }
         />
       )}
     </div>
