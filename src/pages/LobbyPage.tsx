@@ -11,14 +11,20 @@ type Props = {
   inviteCode: string
   players: Player[]
   isReady: boolean
+  isHost: boolean
+  allPlayersReady: boolean
   onToggleReady: () => void
+  onStartGame: () => void
 }
 
 export default function LobbyPage({
   inviteCode,
   players,
   isReady,
+  isHost,
+  allPlayersReady,
   onToggleReady,
+  onStartGame,
 }: Props) {
   return (
     <>
@@ -36,7 +42,14 @@ export default function LobbyPage({
 
       <PlayerList players={players} />
 
-      <p>Waiting for host to start...</p>
+      {isHost && (
+        <button
+          disabled={!allPlayersReady}
+          onClick={onStartGame}
+        >
+          Start Game
+        </button>
+      )}
     </>
   )
 }

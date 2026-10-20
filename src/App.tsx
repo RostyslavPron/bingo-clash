@@ -4,6 +4,7 @@ import { createProfile } from './services/profileService'
 import {
   createGameSession,
   joinGameSession,
+  startGame,
 } from './services/sessionService'
 import {
   getPlayers,
@@ -12,6 +13,7 @@ import {
 
 import HomePage from './pages/HomePage'
 import LobbyPage from './pages/LobbyPage'
+import GamePage from './pages/GamePage'
 
 type Player = {
   id: string
@@ -37,6 +39,9 @@ function App() {
   const [players, setPlayers] = useState<Player[]>(
     []
   )
+
+  const [gameStarted, setGameStarted] =
+    useState(false)
 
   useEffect(() => {
     const authenticate = async () => {
@@ -67,7 +72,7 @@ function App() {
 
     loadPlayers()
 
-    const channel = supabase
+    const playerChannel = supabase
       .channel(`players-${sessionId}`)
       .on(
         'postgres_changes',
@@ -82,8 +87,34 @@ function App() {
       )
       .subscribe()
 
+    const sessionChannel = supabase
+      .channel(`session-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'game_sessions',
+        },
+        (payload) => {
+          const updatedSession =
+            payload.new as {
+              status: string
+            }
+
+          if (
+            updatedSession.status ===
+            'active'
+          ) {
+            setGameStarted(true)
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(playerChannel)
+      supabase.removeChannel(sessionChannel)
     }
   }, [sessionId])
 
@@ -115,8 +146,18 @@ function App() {
   }
 
   const currentPlayer = players.find(
-    (p) => p.player_id === userId
+    (player) =>
+      player.player_id === userId
   )
+
+  const isHost =
+    currentPlayer?.is_host ?? false
+
+  const allPlayersReady =
+    players.length > 0 &&
+    players.every(
+      (player) => player.is_ready
+    )
 
   const toggleReady = async () => {
     if (!currentPlayer) return
@@ -126,6 +167,16 @@ function App() {
       sessionId,
       !currentPlayer.is_ready
     )
+  }
+
+  const handleStartGame = async () => {
+    await startGame(sessionId)
+
+    setGameStarted(true)
+  }
+
+  if (gameStarted) {
+    return <GamePage />
   }
 
   return (
@@ -146,7 +197,9 @@ function App() {
           setHostName={setHostName}
           setGameName={setGameName}
           setDisplayName={setDisplayName}
-          setInviteCodeInput={setInviteCodeInput}
+          setInviteCodeInput={
+            setInviteCodeInput
+          }
           onCreateGame={handleCreateGame}
           onJoinGame={handleJoinGame}
         />
@@ -154,8 +207,13 @@ function App() {
         <LobbyPage
           inviteCode={inviteCode}
           players={players}
-          isReady={currentPlayer?.is_ready ?? false}
+          isReady={
+            currentPlayer?.is_ready ?? false
+          }
+          isHost={isHost}
+          allPlayersReady={allPlayersReady}
           onToggleReady={toggleReady}
+          onStartGame={handleStartGame}
         />
       )}
     </div>
