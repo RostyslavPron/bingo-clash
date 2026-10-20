@@ -17,6 +17,7 @@ import {
   publishTemplate,
   unpublishTemplate,
   deleteTemplate,
+  duplicateTemplate,
 } from './services/templateService'
 
 import {
@@ -176,6 +177,17 @@ function App() {
 
       setEntries(entryData)
       setQuestions(questionData)
+    }
+
+  const handleDuplicateTemplate =
+    async (
+      templateId: string
+    ) => {
+     await duplicateTemplate(
+      templateId
+    )
+
+    await loadTemplates()
     }
 
   const handleDeleteTemplate =
@@ -479,21 +491,24 @@ function App() {
 
       {!selectedTemplate ? (
         <TemplatesPage
-          templates={templates}
-          title={title}
-          boardSize={boardSize}
-          setTitle={setTitle}
-          setBoardSize={setBoardSize}
-          onCreateTemplate={
-            handleCreateTemplate
-          }
-          onSelectTemplate={
-            handleSelectTemplate
-          }
-          onDeleteTemplate={
-            handleDeleteTemplate
-          }
-        />
+  templates={templates}
+  title={title}
+  boardSize={boardSize}
+  setTitle={setTitle}
+  setBoardSize={setBoardSize}
+  onCreateTemplate={
+    handleCreateTemplate
+  }
+  onSelectTemplate={
+    handleSelectTemplate
+  }
+  onDeleteTemplate={
+    handleDeleteTemplate
+  }
+  onDuplicateTemplate={
+    handleDuplicateTemplate
+  }
+/>
       ) : (
         <TemplateContentPage
           templateTitle={

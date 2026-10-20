@@ -112,3 +112,97 @@ export async function deleteTemplate(
 
   if (error) throw error
 }
+
+export async function duplicateTemplate(
+  templateId: string
+) {
+  const { data: template } = await supabase
+    .from('bingo_templates')
+    .select('*')
+    .eq('id', templateId)
+    .single()
+
+  if (!template) {
+    throw new Error('Template not found')
+  }
+
+  const { data: newTemplate, error } =
+    await supabase
+      .from('bingo_templates')
+      .insert({
+        owner_id: template.owner_id,
+        title: `${template.title} (Copy)`,
+        board_size: template.board_size,
+        status: 'draft',
+      })
+      .select()
+      .single()
+
+  if (error) throw error
+
+  const { data: entries } =
+    await supabase
+      .from('bingo_template_entries')
+      .select('*')
+      .eq('template_id', templateId)
+
+  if (entries?.length) {
+    await supabase
+      .from('bingo_template_entries')
+      .insert(
+        entries.map((entry) => ({
+          template_id: newTemplate.id,
+          entry_text: entry.entry_text,
+        }))
+      )
+  }
+
+  const { data: questions } =
+    await supabase
+      .from('trivia_questions')
+      .select(`
+        *,
+        trivia_answers(*)
+      `)
+      .eq('template_id', templateId)
+
+  if (questions?.length) {
+    for (const question of questions) {
+      const {
+        data: newQuestion,
+      } = await supabase
+        .from('trivia_questions')
+        .insert({
+          template_id: newTemplate.id,
+          question_text:
+            question.question_text,
+          time_limit_seconds:
+            question.time_limit_seconds,
+        })
+        .select()
+        .single()
+
+      if (
+        question.trivia_answers
+          ?.length
+      ) {
+        await supabase
+          .from('trivia_answers')
+          .insert(
+            question.trivia_answers.map(
+              (answer: any) => ({
+                question_id:
+                  newQuestion.id,
+                answer_text:
+                  answer.answer_text,
+                is_correct:
+                  answer.is_correct,
+              })
+            )
+          )
+      }
+    }
+  }
+
+  return newTemplate
+}

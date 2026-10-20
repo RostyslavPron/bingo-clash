@@ -23,6 +23,10 @@ type Props = {
   onDeleteTemplate: (
     templateId: string
   ) => void
+
+  onDuplicateTemplate: (
+    templateId: string
+  ) => void
 }
 
 export default function TemplatesPage({
@@ -34,6 +38,7 @@ export default function TemplatesPage({
   onCreateTemplate,
   onSelectTemplate,
   onDeleteTemplate,
+  onDuplicateTemplate,
 }: Props) {
   return (
     <>
@@ -93,19 +98,26 @@ export default function TemplatesPage({
             <h3>{template.title}</h3>
 
             <p>
-              Board Size:
-              {' '}
-              {template.board_size}
-              {' x '}
+              Board Size:{' '}
+              {template.board_size} x{' '}
               {template.board_size}
             </p>
 
             <p>
-              Status:
-              {' '}
+              Status:{' '}
               {template.status}
             </p>
           </div>
+
+          <button
+            onClick={() =>
+              onDuplicateTemplate(
+                template.id
+              )
+            }
+          >
+            Duplicate
+          </button>
 
           <button
             onClick={() =>
@@ -113,6 +125,9 @@ export default function TemplatesPage({
                 template.id
               )
             }
+            style={{
+              marginLeft: '10px',
+            }}
           >
             Delete Template
           </button>
