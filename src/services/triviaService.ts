@@ -62,3 +62,52 @@ export async function createAnswer(
     throw error
   }
 }
+
+export async function deleteQuestion(
+  questionId: string
+) {
+  const { error } = await supabase
+    .from('trivia_questions')
+    .delete()
+    .eq('id', questionId)
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function updateQuestion(
+  questionId: string,
+  questionText: string,
+  timeLimit: number
+) {
+  const { error } = await supabase
+    .from('trivia_questions')
+    .update({
+      question_text: questionText,
+      time_limit_seconds: timeLimit,
+    })
+    .eq('id', questionId)
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function updateAnswer(
+  answerId: string,
+  answerText: string,
+  isCorrect: boolean
+) {
+  const { error } = await supabase
+    .from('trivia_answers')
+    .update({
+      answer_text: answerText,
+      is_correct: isCorrect,
+    })
+    .eq('id', answerId)
+
+  if (error) {
+    throw error
+  }
+}

@@ -15,6 +15,7 @@ type Props = {
   questions: Question[]
 
   questionText: string
+  timeLimit: number
 
   answerA: string
   answerB: string
@@ -27,6 +28,10 @@ type Props = {
     value: string
   ) => void
 
+  setTimeLimit: (
+    value: number
+  ) => void
+
   setAnswerA: (value: string) => void
   setAnswerB: (value: string) => void
   setAnswerC: (value: string) => void
@@ -37,12 +42,21 @@ type Props = {
   ) => void
 
   onCreateQuestion: () => void
+
+  onDeleteQuestion: (
+    questionId: string
+  ) => void
+
+  onEditQuestion: (
+    question: Question
+  ) => void
 }
 
 export default function TriviaEditorPage({
   questions,
 
   questionText,
+  timeLimit,
 
   answerA,
   answerB,
@@ -52,6 +66,7 @@ export default function TriviaEditorPage({
   correctAnswer,
 
   setQuestionText,
+  setTimeLimit,
 
   setAnswerA,
   setAnswerB,
@@ -61,12 +76,14 @@ export default function TriviaEditorPage({
   setCorrectAnswer,
 
   onCreateQuestion,
+
+  onDeleteQuestion,
+  onEditQuestion,
 }: Props) {
   return (
     <>
       <h3>
-        Trivia Questions (
-        {questions.length})
+        Trivia Questions ({questions.length})
       </h3>
 
       <input
@@ -76,6 +93,21 @@ export default function TriviaEditorPage({
         onChange={(e) =>
           setQuestionText(
             e.target.value
+          )
+        }
+      />
+
+      <br />
+      <br />
+
+      <input
+        type="number"
+        min="5"
+        max="120"
+        value={timeLimit}
+        onChange={(e) =>
+          setTimeLimit(
+            Number(e.target.value)
           )
         }
       />
@@ -139,21 +171,10 @@ export default function TriviaEditorPage({
           )
         }
       >
-        <option value="A">
-          A
-        </option>
-
-        <option value="B">
-          B
-        </option>
-
-        <option value="C">
-          C
-        </option>
-
-        <option value="D">
-          D
-        </option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
       </select>
 
       <br />
@@ -182,36 +203,43 @@ export default function TriviaEditorPage({
 
           <p>
             Timer:{' '}
-            {
-              question.time_limit_seconds
-            }
-            s
+            {question.time_limit_seconds}s
           </p>
 
           <ul>
             {question.trivia_answers?.map(
               (answer) => (
-                <li
-                  key={answer.id}
-                  style={{
-                    color:
-                      answer.is_correct
-                        ? 'green'
-                        : 'black',
-                    fontWeight:
-                      answer.is_correct
-                        ? 'bold'
-                        : 'normal',
-                  }}
-                >
+                <li key={answer.id}>
                   {answer.answer_text}
-
                   {answer.is_correct &&
                     ' ✅'}
                 </li>
               )
             )}
           </ul>
+
+          <button
+            onClick={() =>
+              onEditQuestion(
+                question
+              )
+            }
+          >
+            Edit Question
+          </button>
+
+          <button
+            onClick={() =>
+              onDeleteQuestion(
+                question.id
+              )
+            }
+            style={{
+              marginLeft: '10px',
+            }}
+          >
+            Delete Question
+          </button>
         </div>
       ))}
     </>

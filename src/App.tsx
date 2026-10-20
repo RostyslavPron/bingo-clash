@@ -6,6 +6,7 @@ import TemplatesPage from './pages/TemplatesPage'
 import TemplateEditorPage from './pages/TemplateEditorPage'
 import TriviaEditorPage from './pages/TriviaEditorPage'
 import TemplateContentPage from './pages/TemplateContentPage'
+import EditQuestionPage from './pages/EditQuestionPage'
 
 import {
   createTemplate,
@@ -22,6 +23,9 @@ import {
   getQuestions,
   createQuestion,
   createAnswer,
+  deleteQuestion,
+  updateQuestion,
+  updateAnswer,
 } from './services/triviaService'
 
 type Template = {
@@ -36,18 +40,24 @@ type Entry = {
   entry_text: string
 }
 
+type Answer = {
+  id: string
+  answer_text: string
+  is_correct: boolean
+}
+
 type Question = {
   id: string
   question_text: string
   time_limit_seconds: number
+  trivia_answers: Answer[]
 }
 
 function App() {
   const [userId, setUserId] = useState('')
 
   const [title, setTitle] = useState('')
-  const [boardSize, setBoardSize] =
-    useState(5)
+  const [boardSize, setBoardSize] = useState(5)
 
   const [templates, setTemplates] =
     useState<Template[]>([])
@@ -72,6 +82,9 @@ function App() {
   const [questionText, setQuestionText] =
     useState('')
 
+  const [timeLimit, setTimeLimit] =
+    useState(15)
+
   const [answerA, setAnswerA] =
     useState('')
 
@@ -86,6 +99,9 @@ function App() {
 
   const [correctAnswer, setCorrectAnswer] =
     useState('A')
+
+  const [editingQuestion, setEditingQuestion] =
+    useState<Question | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -106,7 +122,6 @@ function App() {
       }
 
       await createProfile(session.user.id)
-
       setUserId(session.user.id)
     }
 
@@ -115,7 +130,6 @@ function App() {
 
   useEffect(() => {
     if (!userId) return
-
     loadTemplates()
   }, [userId])
 
@@ -124,6 +138,15 @@ function App() {
       await getTemplates(userId)
 
     setTemplates(data)
+  }
+
+  const loadQuestions = async (
+    templateId: string
+  ) => {
+    const data =
+      await getQuestions(templateId)
+
+    setQuestions(data)
   }
 
   const handleCreateTemplate =
@@ -155,15 +178,29 @@ function App() {
       setQuestions(questionData)
     }
 
+  const handleDeleteTemplate =
+    async (
+      templateId: string
+    ) => {
+      const confirmed =
+        window.confirm(
+          'Delete this template?'
+        )
+
+      if (!confirmed) return
+
+      await deleteTemplate(templateId)
+
+      await loadTemplates()
+    }
+
   const handleBack = async () => {
     setSelectedTemplate(null)
-
     await loadTemplates()
   }
 
   const handleAddEntry = async () => {
     if (!selectedTemplate) return
-
     if (!newEntry.trim()) return
 
     await addTemplateEntry(
@@ -211,22 +248,6 @@ function App() {
       await loadTemplates()
     }
 
-  const handleDeleteTemplate =
-  async (
-    templateId: string
-  ) => {
-    const confirmed =
-      window.confirm(
-        'Delete this template?'
-      )
-
-    if (!confirmed) return
-
-    await deleteTemplate(templateId)
-
-    await loadTemplates()
-  }
-
   const handleArchive =
     async () => {
       if (!selectedTemplate) return
@@ -251,7 +272,7 @@ function App() {
         await createQuestion(
           selectedTemplate.id,
           questionText,
-          15
+          timeLimit
         )
 
       await createAnswer(
@@ -279,19 +300,173 @@ function App() {
       )
 
       setQuestionText('')
+      setTimeLimit(15)
       setAnswerA('')
       setAnswerB('')
       setAnswerC('')
       setAnswerD('')
       setCorrectAnswer('A')
 
-      const data =
-        await getQuestions(
-          selectedTemplate.id
-        )
-
-      setQuestions(data)
+      await loadQuestions(
+        selectedTemplate.id
+      )
     }
+
+  const handleDeleteQuestion =
+    async (questionId: string) => {
+      if (!selectedTemplate) return
+
+      await deleteQuestion(questionId)
+
+      await loadQuestions(
+        selectedTemplate.id
+      )
+    }
+
+  const handleEditQuestion = (
+    question: Question
+  ) => {
+    setEditingQuestion(question)
+
+    setQuestionText(
+      question.question_text
+    )
+
+    setTimeLimit(
+      question.time_limit_seconds
+    )
+
+    setAnswerA(
+      question.trivia_answers[0]
+        ?.answer_text || ''
+    )
+
+    setAnswerB(
+      question.trivia_answers[1]
+        ?.answer_text || ''
+    )
+
+    setAnswerC(
+      question.trivia_answers[2]
+        ?.answer_text || ''
+    )
+
+    setAnswerD(
+      question.trivia_answers[3]
+        ?.answer_text || ''
+    )
+
+    const answers =
+      question.trivia_answers
+
+    if (answers[0]?.is_correct)
+      setCorrectAnswer('A')
+    if (answers[1]?.is_correct)
+      setCorrectAnswer('B')
+    if (answers[2]?.is_correct)
+      setCorrectAnswer('C')
+    if (answers[3]?.is_correct)
+      setCorrectAnswer('D')
+  }
+
+  const handleSaveEdit =
+  async () => {
+    if (
+      !editingQuestion ||
+      !selectedTemplate
+    )
+      return
+
+    await updateQuestion(
+      editingQuestion.id,
+      questionText,
+      timeLimit
+    )
+
+    await updateAnswer(
+      editingQuestion.trivia_answers[0]
+        .id,
+      answerA,
+      correctAnswer === 'A'
+    )
+
+    await updateAnswer(
+      editingQuestion.trivia_answers[1]
+        .id,
+      answerB,
+      correctAnswer === 'B'
+    )
+
+    await updateAnswer(
+      editingQuestion.trivia_answers[2]
+        .id,
+      answerC,
+      correctAnswer === 'C'
+    )
+
+    await updateAnswer(
+      editingQuestion.trivia_answers[3]
+        .id,
+      answerD,
+      correctAnswer === 'D'
+    )
+
+    setEditingQuestion(null)
+
+    setQuestionText('')
+    setTimeLimit(15)
+
+    setAnswerA('')
+    setAnswerB('')
+    setAnswerC('')
+    setAnswerD('')
+
+    setCorrectAnswer('A')
+
+    await loadQuestions(
+      selectedTemplate.id
+    )
+  }
+
+  if (editingQuestion) {
+    return (
+      <EditQuestionPage
+        question={editingQuestion}
+        questionText={questionText}
+        timeLimit={timeLimit}
+        answerA={answerA}
+        answerB={answerB}
+        answerC={answerC}
+        answerD={answerD}
+        correctAnswer={correctAnswer}
+        setQuestionText={
+          setQuestionText
+        }
+        setTimeLimit={setTimeLimit}
+        setAnswerA={setAnswerA}
+        setAnswerB={setAnswerB}
+        setAnswerC={setAnswerC}
+        setAnswerD={setAnswerD}
+        setCorrectAnswer={
+          setCorrectAnswer
+        }
+        onSave={handleSaveEdit}
+        onCancel={() => {
+          setEditingQuestion(null)
+
+          setQuestionText('')
+          setTimeLimit(15)
+
+          setAnswerA('')
+          setAnswerB('')
+          setAnswerC('')
+          setAnswerD('')
+
+          setCorrectAnswer('A')
+        }}
+      />
+    )
+  }
 
   return (
     <div
@@ -309,77 +484,89 @@ function App() {
           boardSize={boardSize}
           setTitle={setTitle}
           setBoardSize={setBoardSize}
-          onCreateTemplate={handleCreateTemplate}
-          onSelectTemplate={handleSelectTemplate}
-          onDeleteTemplate={handleDeleteTemplate}
+          onCreateTemplate={
+            handleCreateTemplate
+          }
+          onSelectTemplate={
+            handleSelectTemplate
+          }
+          onDeleteTemplate={
+            handleDeleteTemplate
+          }
         />
       ) : (
-        <>
-          <TemplateContentPage
-            templateTitle={
-              selectedTemplate.title
-            }
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          >
-            {activeTab === 'entries' ? (
-              <TemplateEditorPage
-                templateTitle={
-                  selectedTemplate.title
-                }
-                boardSize={
-                  selectedTemplate.board_size
-                }
-                status={
-                  selectedTemplate.status
-                }
-                entries={entries}
-                newEntry={newEntry}
-                setNewEntry={setNewEntry}
-                onAddEntry={
-                  handleAddEntry
-                }
-                onDeleteEntry={
-                  handleDeleteEntry
-                }
-                onPublish={
-                  handlePublish
-                }
-                onArchive={
-                  handleArchive
-                }
-                onBack={handleBack}
-              />
-            ) : (
-              <TriviaEditorPage
-                questions={questions}
-                questionText={
-                  questionText
-                }
-                answerA={answerA}
-                answerB={answerB}
-                answerC={answerC}
-                answerD={answerD}
-                correctAnswer={
-                  correctAnswer
-                }
-                setQuestionText={
-                  setQuestionText
-                }
-                setAnswerA={setAnswerA}
-                setAnswerB={setAnswerB}
-                setAnswerC={setAnswerC}
-                setAnswerD={setAnswerD}
-                setCorrectAnswer={
-                  setCorrectAnswer
-                }
-                onCreateQuestion={
-                  handleCreateQuestion
-                }
-              />
-            )}
-          </TemplateContentPage>
-        </>
+        <TemplateContentPage
+          templateTitle={
+            selectedTemplate.title
+          }
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        >
+          {activeTab === 'entries' ? (
+            <TemplateEditorPage
+              templateTitle={
+                selectedTemplate.title
+              }
+              boardSize={
+                selectedTemplate.board_size
+              }
+              status={
+                selectedTemplate.status
+              }
+              entries={entries}
+              newEntry={newEntry}
+              setNewEntry={setNewEntry}
+              onAddEntry={
+                handleAddEntry
+              }
+              onDeleteEntry={
+                handleDeleteEntry
+              }
+              onPublish={
+                handlePublish
+              }
+              onArchive={
+                handleArchive
+              }
+              onBack={handleBack}
+            />
+          ) : (
+            <TriviaEditorPage
+              questions={questions}
+              questionText={questionText}
+              timeLimit={timeLimit}
+              answerA={answerA}
+              answerB={answerB}
+              answerC={answerC}
+              answerD={answerD}
+              correctAnswer={
+                correctAnswer
+              }
+              setQuestionText={
+                setQuestionText
+              }
+              setTimeLimit={
+                setTimeLimit
+              }
+              setAnswerA={setAnswerA}
+              setAnswerB={setAnswerB}
+              setAnswerC={setAnswerC}
+              setAnswerD={setAnswerD}
+              setCorrectAnswer={
+                setCorrectAnswer
+              }
+              onCreateQuestion={
+                handleCreateQuestion
+              }
+              onDeleteQuestion={
+                handleDeleteQuestion
+              }
+              onEditQuestion={
+                handleEditQuestion
+              }
+            />
+          )}
+        </TemplateContentPage>
       )}
     </div>
   )
