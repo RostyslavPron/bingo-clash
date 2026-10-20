@@ -5,7 +5,14 @@ export async function getQuestions(
 ) {
   const { data, error } = await supabase
     .from('trivia_questions')
-    .select('*')
+    .select(`
+      *,
+      trivia_answers (
+        id,
+        answer_text,
+        is_correct
+      )
+    `)
     .eq('template_id', templateId)
     .order('created_at')
 
@@ -54,19 +61,4 @@ export async function createAnswer(
   if (error) {
     throw error
   }
-}
-
-export async function getAnswers(
-  questionId: string
-) {
-  const { data, error } = await supabase
-    .from('trivia_answers')
-    .select('*')
-    .eq('question_id', questionId)
-
-  if (error) {
-    throw error
-  }
-
-  return data
 }

@@ -1,7 +1,14 @@
+type Answer = {
+  id: string
+  answer_text: string
+  is_correct: boolean
+}
+
 type Question = {
   id: string
   question_text: string
   time_limit_seconds: number
+  trivia_answers: Answer[]
 }
 
 type Props = {
@@ -57,7 +64,10 @@ export default function TriviaEditorPage({
 }: Props) {
   return (
     <>
-      <h3>Trivia Questions</h3>
+      <h3>
+        Trivia Questions (
+        {questions.length})
+      </h3>
 
       <input
         type="text"
@@ -166,9 +176,9 @@ export default function TriviaEditorPage({
             marginBottom: '12px',
           }}
         >
-          <strong>
+          <h4>
             {question.question_text}
-          </strong>
+          </h4>
 
           <p>
             Timer:{' '}
@@ -177,6 +187,31 @@ export default function TriviaEditorPage({
             }
             s
           </p>
+
+          <ul>
+            {question.trivia_answers?.map(
+              (answer) => (
+                <li
+                  key={answer.id}
+                  style={{
+                    color:
+                      answer.is_correct
+                        ? 'green'
+                        : 'black',
+                    fontWeight:
+                      answer.is_correct
+                        ? 'bold'
+                        : 'normal',
+                  }}
+                >
+                  {answer.answer_text}
+
+                  {answer.is_correct &&
+                    ' ✅'}
+                </li>
+              )
+            )}
+          </ul>
         </div>
       ))}
     </>
