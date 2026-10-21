@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import { createProfile } from './services/profileService'
-
 import TemplatesPage from './pages/TemplatesPage'
 import TemplateEditorPage from './pages/TemplateEditorPage'
 import TriviaEditorPage from './pages/TriviaEditorPage'
@@ -10,13 +9,7 @@ import EditQuestionPage from './pages/EditQuestionPage'
 import SessionLobbyPage from './pages/SessionLobbyPage'
 import {createGameSession, endSession, joinGameSession, getSession,} from './services/sessionService'
 import JoinSessionPage from './pages/JoinSessionPage'
-
-
-import {
-  getSessionPlayers,
-  leaveSession,
-} from './services/playerService'
-
+import {getSessionPlayers,leaveSession,kickPlayer,} from './services/playerService'
 import {
   createTemplate,
   getTemplates,
@@ -128,6 +121,11 @@ function App() {
   const [showJoinPage, setShowJoinPage] =
       useState(false)
 
+  const [
+    sessionEndMessage,
+    setSessionEndMessage,] =
+     useState('')
+
   useEffect(() => {
     const init = async () => {
       const {
@@ -183,58 +181,6 @@ function App() {
   }
 }, [])
 
-useEffect(() => {
-  if (!activeSession) return
-
-  const loadPlayers = async () => {
-    const data =
-      await getSessionPlayers(
-        activeSession.id
-      )
-
-    setPlayers(data)
-  }
-
-  loadPlayers()
-
-  const channel = supabase
-    .channel(
-      `players-${activeSession.id}`
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'session_players',
-      },
-      async (payload) => {
-        const sessionId =
-          (payload.new as any)
-            ?.session_id ??
-          (payload.old as any)
-            ?.session_id
-
-        if (
-          sessionId !==
-          activeSession.id
-        )
-          return
-
-        const data =
-          await getSessionPlayers(
-            activeSession.id
-          )
-
-        setPlayers(data)
-      }
-    )
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
-  }
-}, [activeSession])
 
 useEffect(() => {
   if (!activeSession) return
@@ -296,8 +242,8 @@ useEffect(() => {
 
         setInviteCode('')
 
-        alert(
-          'The host ended the session.'
+        setSessionEndMessage(
+         'The host ended the session.'
         )
       }
     } catch (error) {
@@ -307,6 +253,60 @@ useEffect(() => {
 
   return () => clearInterval(interval)
 }, [activeSession])
+
+useEffect(() => {
+  if (!activeSession) return
+
+  const loadPlayers = async () => {
+    const data =
+      await getSessionPlayers(
+        activeSession.id
+      )
+
+    setPlayers(data)
+
+    const stillInSession =
+      data.some(
+        (player: any) =>
+          player.player_id === userId
+      )
+
+    if (!stillInSession) {
+      setPlayers([])
+
+      setActiveSession(null)
+
+      setInviteCode('')
+
+      setSessionEndMessage(
+        'You were removed from the session.'
+      )
+    }
+  }
+
+  loadPlayers()
+
+  const channel = supabase
+    .channel(
+      `players-${activeSession.id}`
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'session_players',
+      },
+      async () => {
+        await loadPlayers()
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [activeSession, userId])
 
   const loadTemplates = async () => {
     const data =
@@ -633,6 +633,22 @@ useEffect(() => {
     setInviteCode('')
   }
 
+  const handleKickPlayer =
+  async (
+    sessionPlayerId: string
+  ) => {
+    const confirmed =
+      window.confirm(
+        'Kick this player?'
+      )
+
+    if (!confirmed) return
+
+    await kickPlayer(
+      sessionPlayerId
+    )
+  }
+
   const handleSaveEdit =
   async () => {
     if (
@@ -741,8 +757,10 @@ useEffect(() => {
         inviteCode={
           activeSession.invite_code
         }
+        currentUserId={userId}
         players={players}
         onLeave={handleLeaveSession}
+        onKickPlayer={handleKickPlayer}
       />
    )
   } 
@@ -773,6 +791,18 @@ useEffect(() => {
       }}
     >
       <h1>Bingo Clash</h1>
+      {sessionEndMessage && (
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #ef4444',
+            marginBottom: '20px',
+          }}
+        >
+          {sessionEndMessage}
+        </div>
+      )}
 
       {!selectedTemplate ? (
         <TemplatesPage

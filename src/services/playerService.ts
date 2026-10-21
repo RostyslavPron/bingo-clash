@@ -45,8 +45,25 @@ export async function leaveSession(
       .eq('player_id', playerId)
       .select()
 
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function kickPlayer(
+  sessionPlayerId: string
+) {
+  const { data, error } =
+    await supabase
+      .from('session_players')
+      .delete()
+      .eq('id', sessionPlayerId)
+      .select()
+
   console.log(
-    'LEAVE RESULT',
+    'KICK RESULT',
     data,
     error
   )
@@ -54,6 +71,4 @@ export async function leaveSession(
   if (error) {
     throw error
   }
-
-  return data
 }

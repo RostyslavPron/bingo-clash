@@ -1,5 +1,6 @@
 type Player = {
   id: string
+  player_id: string
   display_name: string
   is_ready: boolean
   is_host: boolean
@@ -9,15 +10,34 @@ type Props = {
   gameName: string
   inviteCode: string
   players: Player[]
+
+  currentUserId: string
+
   onLeave: () => void
+
+  onKickPlayer: (
+    sessionPlayerId: string
+  ) => void
 }
 
 export default function SessionLobbyPage({
   gameName,
   inviteCode,
   players,
+  currentUserId,
   onLeave,
+  onKickPlayer,
 }: Props) {
+  const currentPlayer =
+    players.find(
+      (player) =>
+        player.player_id ===
+        currentUserId
+    )
+
+  const userIsHost =
+    currentPlayer?.is_host ?? false
+
   return (
     <div
       style={{
@@ -48,15 +68,27 @@ export default function SessionLobbyPage({
 
             {player.is_host &&
               ' (Host)'}
+
+            {userIsHost &&
+              !player.is_host && (
+                <button
+                  style={{
+                    marginLeft:
+                      '10px',
+                  }}
+                  onClick={() =>
+                    onKickPlayer(
+                      player.id
+                    )
+                  }
+                >
+                  Kick
+                </button>
+              )}
           </li>
         ))}
       </ul>
 
-      <hr />
-        
-      <p>
-        Waiting for players...
-      </p>
       <hr />
 
       <button onClick={onLeave}>
