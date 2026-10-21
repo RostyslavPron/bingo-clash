@@ -27,6 +27,12 @@ type Props = {
   onDuplicateTemplate: (
     templateId: string
   ) => void
+
+  displayName: string
+
+  setDisplayName: (
+    value: string
+) => void
 }
 
 export default function TemplatesPage({
@@ -39,10 +45,25 @@ export default function TemplatesPage({
   onSelectTemplate,
   onDeleteTemplate,
   onDuplicateTemplate,
+  displayName,
+  setDisplayName,
 }: Props) {
   return (
     <>
       <h2>My Games</h2>
+      <input
+        type="text"
+        placeholder="Your Name"
+        value={displayName}
+        onChange={(e) =>
+          setDisplayName(
+            e.target.value
+          )
+        }
+      />
+
+<br />
+<br />
 
       <input
         type="text"

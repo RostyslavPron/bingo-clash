@@ -12,6 +12,9 @@ import SessionLobbyPage from './pages/SessionLobbyPage'
 
 import {createGameSession,} from './services/sessionService'
 
+import {
+  getSessionPlayers,
+} from './services/playerService'
 
 import {
   createTemplate,
@@ -111,6 +114,12 @@ function App() {
   
   const [activeSession, setActiveSession] =
     useState<any>(null)
+
+  const [players, setPlayers] =
+    useState<any[]>([])
+  
+  const [displayName, setDisplayName] =
+    useState('')
 
   useEffect(() => {
     const init = async () => {
@@ -337,22 +346,24 @@ function App() {
     if (!selectedTemplate)
       return
 
-    if (
-      selectedTemplate.status !==
-      'published'
-    )
-      return
-
     const session =
       await createGameSession(
         selectedTemplate.id,
         selectedTemplate.title,
         userId,
-        'Host'
+        displayName || 'Host'
       )
+
+    const playerData =
+      await getSessionPlayers(
+        session.id
+      )
+
+    setPlayers(playerData)
 
     setActiveSession(session)
   }
+
 
   const handleDeleteQuestion =
     async (questionId: string) => {
@@ -514,11 +525,12 @@ function App() {
     return (
       <SessionLobbyPage
         gameName={
-         activeSession.game_name
+          activeSession.game_name
         }
         inviteCode={
           activeSession.invite_code
-       }
+        }
+        players={players}
       />
    )
   } 
@@ -550,6 +562,8 @@ function App() {
   onDuplicateTemplate={
     handleDuplicateTemplate
   }
+  displayName={displayName}
+setDisplayName={setDisplayName}
 />
       ) : (
         <TemplateContentPage

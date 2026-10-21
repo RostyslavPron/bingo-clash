@@ -1,11 +1,20 @@
+type Player = {
+  id: string
+  display_name: string
+  is_ready: boolean
+  is_host: boolean
+}
+
 type Props = {
   gameName: string
   inviteCode: string
+  players: Player[]
 }
 
 export default function SessionLobbyPage({
   gameName,
   inviteCode,
+  players,
 }: Props) {
   return (
     <div
@@ -16,10 +25,6 @@ export default function SessionLobbyPage({
     >
       <h1>{gameName}</h1>
 
-      <hr />
-
-      <h2>Lobby</h2>
-
       <p>
         Invite Code:{' '}
         <strong>
@@ -27,18 +32,25 @@ export default function SessionLobbyPage({
         </strong>
       </p>
 
-      <p>
-        Share this code with
-        players to join.
-      </p>
-
       <hr />
 
-      <h3>Players</h3>
+      <h2>Players</h2>
 
       <ul>
-        <li>✅ Host</li>
+        {players.map((player) => (
+          <li key={player.id}>
+            {player.is_ready
+              ? '✅'
+              : '⬜'}{' '}
+            {player.display_name}
+
+            {player.is_host &&
+              ' (Host)'}
+          </li>
+        ))}
       </ul>
+
+      <hr />
 
       <p>
         Waiting for players...
