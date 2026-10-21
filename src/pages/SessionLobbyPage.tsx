@@ -9,12 +9,14 @@ type Props = {
   gameName: string
   inviteCode: string
   players: Player[]
+  onLeave: () => void
 }
 
 export default function SessionLobbyPage({
   gameName,
   inviteCode,
   players,
+  onLeave,
 }: Props) {
   return (
     <div
@@ -51,10 +53,15 @@ export default function SessionLobbyPage({
       </ul>
 
       <hr />
-
+        
       <p>
         Waiting for players...
       </p>
+      <hr />
+
+      <button onClick={onLeave}>
+        Leave Session
+      </button>
     </div>
   )
 }

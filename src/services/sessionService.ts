@@ -111,3 +111,34 @@ export async function startGame(
     throw error
   }
 }
+
+export async function endSession(
+  sessionId: string
+) {
+  const { error } = await supabase
+    .from('game_sessions')
+    .update({
+      status: 'ended',
+    })
+    .eq('id', sessionId)
+
+  if (error) {
+    throw error
+  }
+}
+export async function getSession(
+  sessionId: string
+) {
+  const { data, error } =
+    await supabase
+      .from('game_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}

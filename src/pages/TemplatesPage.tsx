@@ -32,21 +32,24 @@ type Props = {
 
   setDisplayName: (
     value: string
-) => void
+  ) => void
+
+  onShowJoinPage: () => void
 }
 
 export default function TemplatesPage({
   templates,
   title,
   boardSize,
+  displayName,
   setTitle,
   setBoardSize,
   onCreateTemplate,
   onSelectTemplate,
   onDeleteTemplate,
   onDuplicateTemplate,
-  displayName,
   setDisplayName,
+  onShowJoinPage,
 }: Props) {
   return (
     <>
@@ -95,6 +98,14 @@ export default function TemplatesPage({
 
       <button onClick={onCreateTemplate}>
         Create Template
+      </button>
+      <button
+        onClick={onShowJoinPage}
+        style={{
+          marginLeft: '10px',
+        }}
+      >
+        Join Session
       </button>
 
       <hr />

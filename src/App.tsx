@@ -7,13 +7,14 @@ import TemplateEditorPage from './pages/TemplateEditorPage'
 import TriviaEditorPage from './pages/TriviaEditorPage'
 import TemplateContentPage from './pages/TemplateContentPage'
 import EditQuestionPage from './pages/EditQuestionPage'
-
 import SessionLobbyPage from './pages/SessionLobbyPage'
+import {createGameSession, endSession, joinGameSession, getSession,} from './services/sessionService'
+import JoinSessionPage from './pages/JoinSessionPage'
 
-import {createGameSession,} from './services/sessionService'
 
 import {
   getSessionPlayers,
+  leaveSession,
 } from './services/playerService'
 
 import {
@@ -120,6 +121,12 @@ function App() {
   
   const [displayName, setDisplayName] =
     useState('')
+  
+  const [inviteCode, setInviteCode] =
+    useState('')
+
+  const [showJoinPage, setShowJoinPage] =
+      useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -150,6 +157,156 @@ function App() {
     if (!userId) return
     loadTemplates()
   }, [userId])
+
+  useEffect(() => {
+  const channel = supabase
+    .channel('debug-all-players')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'session_players',
+      },
+      (payload) => {
+        console.log(
+          'DEBUG PLAYER EVENT',
+          payload.eventType,
+          payload
+        )
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [])
+
+useEffect(() => {
+  if (!activeSession) return
+
+  const loadPlayers = async () => {
+    const data =
+      await getSessionPlayers(
+        activeSession.id
+      )
+
+    setPlayers(data)
+  }
+
+  loadPlayers()
+
+  const channel = supabase
+    .channel(
+      `players-${activeSession.id}`
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'session_players',
+      },
+      async (payload) => {
+        const sessionId =
+          (payload.new as any)
+            ?.session_id ??
+          (payload.old as any)
+            ?.session_id
+
+        if (
+          sessionId !==
+          activeSession.id
+        )
+          return
+
+        const data =
+          await getSessionPlayers(
+            activeSession.id
+          )
+
+        setPlayers(data)
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [activeSession])
+
+useEffect(() => {
+  if (!activeSession) return
+
+  const channel = supabase
+    .channel(
+      `session-status-${activeSession.id}`
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'game_sessions',
+      },
+      (payload) => {
+        const session =
+          payload.new as any
+
+        if (!session) return
+
+        if (
+          session.id ===
+            activeSession.id &&
+          session.status === 'ended'
+        ) {
+          setPlayers([])
+
+          setActiveSession(null)
+
+          setInviteCode('')
+
+          alert(
+            'The host ended the session.'
+          )
+        }
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [activeSession])
+
+useEffect(() => {
+  if (!activeSession) return
+
+  const interval = setInterval(async () => {
+    try {
+      const session = await getSession(
+        activeSession.id
+      )
+
+      if (session.status === 'ended') {
+        setPlayers([])
+
+        setActiveSession(null)
+
+        setInviteCode('')
+
+        alert(
+          'The host ended the session.'
+        )
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }, 2000)
+
+  return () => clearInterval(interval)
+}, [activeSession])
 
   const loadTemplates = async () => {
     const data =
@@ -345,14 +502,14 @@ function App() {
   async () => {
     if (!selectedTemplate)
       return
-
-    const session =
-      await createGameSession(
-        selectedTemplate.id,
-        selectedTemplate.title,
-        userId,
-        displayName || 'Host'
-      )
+    
+  const session =
+    await createGameSession(
+      selectedTemplate.id,
+      selectedTemplate.title,
+      userId,
+      displayName || 'Host'
+    )
 
     const playerData =
       await getSessionPlayers(
@@ -420,6 +577,60 @@ function App() {
       setCorrectAnswer('C')
     if (answers[3]?.is_correct)
       setCorrectAnswer('D')
+  }
+  const handleJoinSession =
+  async () => {
+    const session =
+      await joinGameSession(
+        inviteCode,
+        userId,
+        displayName || 'Player'
+      )
+
+    const playerData =
+      await getSessionPlayers(
+        session.id
+      )
+
+    setPlayers(playerData)
+
+    setActiveSession(session)
+
+    setShowJoinPage(false)
+  }
+
+  const handleLeaveSession =
+  async () => {
+    if (!activeSession)
+      return
+
+    const currentPlayer =
+      players.find(
+        (player) =>
+          player.player_id === userId
+      )
+
+    if (currentPlayer?.is_host) {
+      await endSession(
+        activeSession.id
+      )
+
+      await leaveSession(
+        activeSession.id,
+        userId
+      )
+    } else {
+      await leaveSession(
+        activeSession.id,
+        userId
+      )
+    }
+
+    setPlayers([])
+
+    setActiveSession(null)
+
+    setInviteCode('')
   }
 
   const handleSaveEdit =
@@ -531,9 +742,29 @@ function App() {
           activeSession.invite_code
         }
         players={players}
+        onLeave={handleLeaveSession}
       />
    )
   } 
+ 
+  if (showJoinPage) {
+    return (
+      <JoinSessionPage
+        displayName={displayName}
+        setDisplayName={
+          setDisplayName
+        }
+        inviteCode={inviteCode}
+        setInviteCode={
+          setInviteCode
+        }
+        onJoin={handleJoinSession}
+        onBack={() =>
+          setShowJoinPage(false)
+        }
+      />
+    )
+  }
   return (
     <div
       style={{
@@ -545,27 +776,30 @@ function App() {
 
       {!selectedTemplate ? (
         <TemplatesPage
-  templates={templates}
-  title={title}
-  boardSize={boardSize}
-  setTitle={setTitle}
-  setBoardSize={setBoardSize}
-  onCreateTemplate={
-    handleCreateTemplate
-  }
-  onSelectTemplate={
-    handleSelectTemplate
-  }
-  onDeleteTemplate={
-    handleDeleteTemplate
-  }
-  onDuplicateTemplate={
-    handleDuplicateTemplate
-  }
-  displayName={displayName}
-setDisplayName={setDisplayName}
-/>
-      ) : (
+          templates={templates}
+          title={title}
+          boardSize={boardSize}
+          setTitle={setTitle}
+          setBoardSize={setBoardSize}
+          onCreateTemplate={
+            handleCreateTemplate
+          }
+          onSelectTemplate={
+            handleSelectTemplate
+          }
+          onDeleteTemplate={
+            handleDeleteTemplate
+          }
+          onDuplicateTemplate={
+            handleDuplicateTemplate
+          }
+          displayName={displayName}
+          setDisplayName={setDisplayName}
+          onShowJoinPage={() =>
+            setShowJoinPage(true)
+          }
+        />
+        ) : (
         <TemplateContentPage
           templateTitle={
             selectedTemplate.title

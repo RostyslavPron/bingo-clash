@@ -32,3 +32,28 @@ export async function setReadyStatus(
     throw error
   }
 }
+
+export async function leaveSession(
+  sessionId: string,
+  playerId: string
+) {
+  const { data, error } =
+    await supabase
+      .from('session_players')
+      .delete()
+      .eq('session_id', sessionId)
+      .eq('player_id', playerId)
+      .select()
+
+  console.log(
+    'LEAVE RESULT',
+    data,
+    error
+  )
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
